@@ -142,5 +142,3 @@ user/
 ## License 
 
 The license is the Unlicense. As far as motivation, this is a passion project and for educational purposes, nothing more. With this being said, anyone may (and is encouraged to) use GraniteOS 2 for their own purposes. 
-  servers/launcher/       GUI program launcher
-```
