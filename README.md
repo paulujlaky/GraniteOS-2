@@ -1,10 +1,7 @@
 # GraniteOS 2
 
 A from-scratch **microkernel** rewrite of GraniteOS for ARM64 (and, later,
-x86_64). The kernel keeps only address spaces, threads & scheduling, IPC,
-interrupt dispatch, and capabilities; the filesystem, block and display drivers,
-and the compositor become user-space servers. The system is SMP-capable and
-ships with a persistent on-disk filesystem plus an optional (but highly recommended) virtio-gpu desktop.
+x86_64).
 
 [![GraniteOS Desktop Demo](_docs/desktop_demo.png)](_docs/desktop_demo.png)
 
@@ -13,7 +10,7 @@ ships with a persistent on-disk filesystem plus an optional (but highly recommen
 - **Zig 0.15** (tested with 0.15.2)
 - **QEMU** with `qemu-system-aarch64`.
 
-## Build and run
+## Build And Run 
 
 ```sh
 zig build # kernel image + user module bundle + persistent disk seed (zig-out/bin)
@@ -27,53 +24,22 @@ zig build test # host unit tests for the kernel core and the user runtime
 
 QEMU run steps accept `-Dsmp=<cores>`, `-Dmemory=<MiB>`, and `-Ddisk=<MiB>`
 to size the virtual machine and persistent disk image (defaults: 4 cores,
-512 MiB RAM, 64 MiB disk). The default disk is `disk.img`; non-default sizes
-use `disk-<MiB>M.img`. A virtio-net NIC on QEMU's user-mode network is attached
-by default; pass `-Dnet=false` to boot without one.
+512 MiB RAM, 64 MiB disk). 
 
-`zig build qemu` boots, discovers the machine from the device tree, logs each
-subsystem as it comes up (memory, interrupts, objects, and the SMP scheduler),
-then hands off to Flint. Flint loads bundled ELF programs for the name service,
-console and block/display drivers, the filesystem server, Marble (the
-interactive shell), and utilities (`echo`, `cat`, `help`, `ls`, `write`, ...).
-When a virtio-blk disk is present, binaries are installed under `/apps` on the
-persistent filesystem (layout: `/apps`, `/user`, `/cfgs`, `/temp`). If virtio-gpu
-hardware is present (`zig build qemu-gui`), Flint
-starts the display and input drivers, the compositor, the launcher, and a
-welcome desktop with taskbar chrome. GUI boots also expose a VirtIO Sound output;
-Radio streams over the net, and `play <file.wav>` plays local PCM WAV files
-(8- or 16-bit mono/stereo at standard VirtIO sample rates). A virtio-net NIC is attached by
-default (disable with `-Dnet=false`); Flint starts the net driver and the netstack
-server, a userspace ARP/IPv4/ICMP/TCP stack reachable at `10.0.2.15` on QEMU's
-user-mode network, and `fetch <url>` does a real HTTP/1.0 or HTTPS GET over it
-(e.g. `fetch https://example.com/`; rebuild before HTTPS demos so the wall clock
-from `build_epoch_s` is current). QEMU attaches virtio-rng for TLS entropy. The
-host itself is reachable from the guest at `10.0.2.2`; `-netdev`'s
-`hostfwd=tcp::5555-:5555` reaches a guest listener from the host. Type `exit` at
-the `marble [/] >` prompt to watch the supervisor restart Marble; quit QEMU with
-`Ctrl-A` then `x`.
-`scripts/m6.sh` drives Marble over serial; `scripts/m9.sh` tests the GUI
-stack.
-
-## Software repositories
+## Building Your Own Apps
 
 The desktop pins **Software**, and the launcher exposes it beside its search
-field. It reads a small HTTPS repository index, verifies static AArch64 ELF
-packages by ABI, size, ELF headers, and SHA-256, then installs them
-transactionally under `/apps`.
-Installed metadata is merged into the launcher at runtime, so new applications
-appear without rebuilding the OS. The launcher now scrolls categories, apps,
-and search results independently.
+field. It reads a small HTTPS repository index
 
 See [`repo/README.md`](repo/README.md) for the read/publish protocol and
-deployable reference server. See [`sdk/README.md`](sdk/README.md) for the
-source-linked Zig SDK, example application, stripped ELF builder, and publisher.
+deployable software server. This is important for hosting and publishing your own 
+third-party apps. To build some on top of GraniteOS 2, see [`sdk/README.md`](sdk/README.md) 
+for the source-linked Zig SDK, example application, stripped ELF builder, and publisher.
 
 ## Layout
 
-Assembly and Zig never share a directory: each arch keeps its non-Zig toolchain
-inputs (`.S` sources and the linker script) in an `asm/` subdirectory, so the
-arch directory itself is Zig-only.
+Modules exist as directories and are intentionally thin, and split between Zig code
+and Assembly where needed.
 
 ```
 build.zig                 kernel + user ELFs + bundle/flatten/seedisk tools + QEMU run steps
@@ -171,5 +137,10 @@ user/
   servers/netstack/       ARP/IPv4/ICMP/TCP stack and socket server
   servers/display/        compositor and window manager
   servers/input/          virtio-input multiplexer
+```
+
+## License 
+
+The license is the Unlicense. As far as motivation, this is a passion project and for educational purposes, nothing more. With this being said, anyone may (and is encouraged to) use GraniteOS 2 for their own purposes. 
   servers/launcher/       GUI program launcher
 ```
